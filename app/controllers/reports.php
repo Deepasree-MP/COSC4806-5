@@ -13,6 +13,12 @@ class Reports extends Controller {
         $reminderModel = $this->model('Remainder');
         $userCounts = $reminderModel->getReminderCountsPerUser();
 
-        $this->view('reports/index', ['userCounts' => $userCounts]);
+        $userModel = $this->model('User');
+        $loginCounts = $userModel->get_login_counts();
+
+        $this->view('reports/index', [
+            'userCounts' => $userCounts,
+            'loginCounts' => $loginCounts
+        ]);
     }
 }

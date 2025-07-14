@@ -67,4 +67,18 @@ class User
         }
         return false;
     }
+
+    public function increment_login_count($username)
+    {
+        $stmt = $this->db->prepare("UPDATE users SET login_count = login_count + 1 WHERE username = :username");
+        $stmt->bindParam(':username', $username);
+        return $stmt->execute();
+    }
+
+    public function get_login_counts()
+    {
+        $stmt = $this->db->prepare("SELECT username, login_count FROM users ORDER BY login_count DESC");
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

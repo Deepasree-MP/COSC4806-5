@@ -6,20 +6,11 @@
     <p class="lead">Welcome, <?= htmlspecialchars($_SESSION['username']); ?>!</p>
 
     <div class="alert alert-info">
-        <strong>Admin-only access.</strong> This page will later contain data reports such as:
+        <strong>Admin-only access.</strong> This page includes reports like:
         <ul>
             <li>Total number of reminders per user</li>
-            <li>Top users by reminder count</li>
             <li>Total login attempts per user</li>
-            <li>Chart visualization (Bonus!)</li>
         </ul>
-    </div>
-
-    <div class="card mt-4">
-        <div class="card-body">
-            <h5 class="card-title">Coming Soon</h5>
-            <p class="card-text">This section will show interactive charts for admin statistics and trends.</p>
-        </div>
     </div>
 
     <div class="mt-5">
@@ -43,6 +34,34 @@
                     <?php else: ?>
                         <tr>
                             <td colspan="2">No reminder data found.</td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="mt-5">
+        <h4>Total Login Attempts by User</h4>
+        <div class="table-responsive mt-3">
+            <table class="table table-striped table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Username</th>
+                        <th>Login Attempts</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (!empty($loginCounts)): ?>
+                        <?php foreach ($loginCounts as $row): ?>
+                            <tr>
+                                <td><?= htmlspecialchars($row['username']) ?></td>
+                                <td><?= $row['login_count'] ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="2">No login data found.</td>
                         </tr>
                     <?php endif; ?>
                 </tbody>
