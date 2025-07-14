@@ -1,29 +1,52 @@
 <?php require_once 'app/views/templates/header.php'; ?>
 
 <div class="container mt-4">
-    <h2 class="mb-3">Admin Reports Dashboard</h2>
+    <h2 class="mb-3 fw-bold text-primary">Admin Reports Dashboard</h2>
+    <p class="lead">Welcome, <strong><?= htmlspecialchars($_SESSION['username']); ?></strong></p>
 
-    <p class="lead">Welcome, <?= htmlspecialchars($_SESSION['username']); ?>!</p>
+    <div class="row g-4">
+        
+        <div class="col-md-6">
+            <div class="card border-primary shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-info-circle"></i> Dashboard Info</h5>
+                    <p class="card-text">
+                        This admin-only page shows:
+                        <ul class="mb-0">
+                            <li><span class="badge bg-secondary">Login Attempts</span> per user</li>
+                            <li><span class="badge bg-info">Reminders</span> created by each user</li>
+                            <li>Dynamic <strong>charts</strong> powered by Chart.js</li>
+                        </ul>
+                    </p>
+                </div>
+            </div>
+        </div>
 
-    <div class="alert alert-info">
-        <strong>Admin-only access.</strong> This page includes reports like:
-        <ul>
-            <li>Total number of reminders per user</li>
-            <li>Total login attempts per user</li>
-            <li>Login attempts chart (below)</li>
-        </ul>
+        
+        <div class="col-md-6">
+            <div class="card border-success shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-bar-chart-line"></i> Login Attempts Chart</h5>
+                    <canvas id="loginChart" width="400" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="col-md-12">
+            <div class="card border-warning shadow-sm mt-3">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-bar-chart-fill"></i> Reminders per User Chart</h5>
+                    <canvas id="reminderChart" width="600" height="300"></canvas>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- 📊 Chart Canvas -->
+   
     <div class="mt-5">
-        <h4>Login Attempts Chart</h4>
-        <canvas id="loginChart" width="600" height="300"></canvas>
-    </div>
-
-    <!-- 🧾 Table: Reminders -->
-    <div class="mt-5">
-        <h4>Total Reminders by User</h4>
-        <div class="table-responsive mt-3">
+        <h4 class="fw-bold text-dark">Reminder Counts by User</h4>
+        <div class="table-responsive mt-2">
             <table class="table table-striped table-bordered">
                 <thead class="table-dark">
                     <tr>
@@ -32,27 +55,20 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if (!empty($userCounts)): ?>
-                        <?php foreach ($userCounts as $row): ?>
-                            <tr>
-                                <td><?= htmlspecialchars($row['username']) ?></td>
-                                <td><?= $row['total_reminders'] ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
+                    <?php foreach ($userCounts as $row): ?>
                         <tr>
-                            <td colspan="2">No reminder data found.</td>
+                            <td><?= htmlspecialchars($row['username']) ?></td>
+                            <td><?= $row['total_reminders'] ?></td>
                         </tr>
-                    <?php endif; ?>
+                    <?php endforeach; ?>
                 </tbody>
             </table>
         </div>
     </div>
 
-    <!-- 🧾 Table: Login Attempts -->
     <div class="mt-5">
-        <h4>Total Login Attempts by User</h4>
-        <div class="table-responsive mt-3">
+        <h4 class="fw-bold text-dark">Login Attempts by User</h4>
+        <div class="table-responsive mt-2">
             <table class="table table-striped table-bordered">
                 <thead class="table-dark">
                     <tr>
@@ -61,52 +77,62 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if (!empty($loginCounts)): ?>
-                        <?php foreach ($loginCounts as $row): ?>
-                            <tr>
-                                <td><?= htmlspecialchars($row['username']) ?></td>
-                                <td><?= $row['login_count'] ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
+                    <?php foreach ($loginCounts as $row): ?>
                         <tr>
-                            <td colspan="2">No login data found.</td>
+                            <td><?= htmlspecialchars($row['username']) ?></td>
+                            <td><?= $row['login_count'] ?></td>
                         </tr>
-                    <?php endif; ?>
+                    <?php endforeach; ?>
                 </tbody>
             </table>
         </div>
     </div>
 </div>
 
-<!-- Chart.js CDN -->
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<!-- Chart Script -->
+
 <script>
-    const ctx = document.getElementById('loginChart').getContext('2d');
-    const loginChart = new Chart(ctx, {
+    const loginChartCtx = document.getElementById('loginChart').getContext('2d');
+    const reminderChartCtx = document.getElementById('reminderChart').getContext('2d');
+
+    new Chart(loginChartCtx, {
         type: 'bar',
         data: {
             labels: <?= json_encode(array_column($loginCounts, 'username')) ?>,
             datasets: [{
                 label: 'Login Attempts',
                 data: <?= json_encode(array_column($loginCounts, 'login_count')) ?>,
-                backgroundColor: 'rgba(220, 53, 69, 0.7)',
-                borderColor: 'rgba(220, 53, 69, 1)',
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                borderColor: 'rgba(54, 162, 235, 1)',
                 borderWidth: 1
             }]
         },
         options: {
             responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        precision:0
-                    }
-                }
-            }
+            scales: { y: { beginAtZero: true, precision: 0 } }
+        }
+    });
+
+    new Chart(reminderChartCtx, {
+        type: 'bar',
+        data: {
+            labels: <?= json_encode(array_column($userCounts, 'username')) ?>,
+            datasets: [{
+                label: 'Total Reminders',
+                data: <?= json_encode(array_column($userCounts, 'total_reminders')) ?>,
+                backgroundColor: 'rgba(255, 206, 86, 0.6)',
+                borderColor: 'rgba(255, 206, 86, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true, precision: 0 } }
         }
     });
 </script>
