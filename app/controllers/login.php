@@ -2,18 +2,18 @@
 
 class Login extends Controller {
 
-    public function index() {		
+		public function index() {		
 			session_start(); 
-	    $this->view('login/index');
-    }
-    
-    /*public function verify(){
+			$this->view('login/index');
+		}
+
+		/*public function verify(){
 			$username = $_REQUEST['username'];
 			$password = $_REQUEST['password'];
-		
+
 			$user = $this->model('User');
 			$user->authenticate($username, $password); 
-    }*/
+		}*/
 
 		public function verify() {
 				$username = $_POST['username'];
@@ -28,6 +28,7 @@ class Login extends Controller {
 			if ($authUser) {
 					$_SESSION['auth'] = 1;
 					$_SESSION['username'] = ucwords($username);
+					$_SESSION['just_logged_in'] = true;
 				//echo $username . "-" . $password;
 				//die;
 					unset($_SESSION['failedAuth']);
@@ -46,6 +47,5 @@ class Login extends Controller {
 					die;
 			}
 		}
-
 
 }
