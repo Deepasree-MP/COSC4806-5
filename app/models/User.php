@@ -10,7 +10,7 @@ class User
     {
         $this->db = db_connect();
     }
-  
+
     public function get_all_users()
     {
         $statement = $this->db->prepare("SELECT * FROM users;");
@@ -18,7 +18,7 @@ class User
         return $statement->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function create_user($username, $password)
+    public function create_user($username, $password, $role = 'user')
     {
         if ($this->user_exists($username)) {
             throw new Exception("Username already exists.");
@@ -26,10 +26,11 @@ class User
 
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
         $statement = $this->db->prepare(
-            "INSERT INTO users (username, password) VALUES (:username, :password)"
+            "INSERT INTO users (username, password, role) VALUES (:username, :password, :role)"
         );
         $statement->bindParam(":username", $username);
         $statement->bindParam(":password", $hashed_password);
+        $statement->bindParam(":role", $role);
         $statement->execute();
 
         return $this->db->lastInsertId();
@@ -42,7 +43,7 @@ class User
         $statement->execute();
         return $statement->rowCount() > 0;
     }
-  
+
     public function get_user_by_username($username)
     {
         $stmt = $this->db->prepare(
@@ -53,18 +54,17 @@ class User
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
+    public function authenticate($username, $password)
+    {
+        $username = strtolower($username);
+        $statement = $this->db->prepare("SELECT * FROM users WHERE username = :name");
+        $statement->bindValue(':name', $username);
+        $statement->execute();
+        $user = $statement->fetch(PDO::FETCH_ASSOC);
 
-  public function authenticate($username, $password)
-  {
-      $username = strtolower($username);
-      $statement = $this->db->prepare("SELECT * FROM users WHERE username = :name");
-      $statement->bindValue(':name', $username);
-      $statement->execute();
-      $user = $statement->fetch(PDO::FETCH_ASSOC);
-
-      if ($user && password_verify($password, $user['password'])) {
-          return $user;
-      }
-      return false;
-  }
+        if ($user && password_verify($password, $user['password'])) {
+            return $user;
+        }
+        return false;
+    }
 }
