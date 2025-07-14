@@ -76,16 +76,17 @@ class Remainder {
         return $stmt->execute();
     }
 
-    public function getReminderCountsPerUser() {
+    public function get_reminder_counts_per_user() {
         $stmt = $this->db->prepare("
-            SELECT users.username, COUNT(remainders.id) AS total_reminders
-            FROM users
-            LEFT JOIN remainders ON users.id = remainders.user_id
-            GROUP BY users.username
+            SELECT u.username, COUNT(r.id) AS total_reminders
+            FROM users u
+            LEFT JOIN remainders r ON u.id = r.user_id
+            GROUP BY u.username
             ORDER BY total_reminders DESC
         ");
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
 }
 ?>
