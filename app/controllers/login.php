@@ -30,7 +30,7 @@ class Login extends Controller {
 				if ($authUser) {
 						$_SESSION['auth'] = 1;
 						$_SESSION['username'] = ucwords($username);
-						$_SESSION['role'] = $authUser['role'];
+						$_SESSION['role'] = $authUser['role'] ?? 'user';
 						$_SESSION['just_logged_in'] = true;
 
 						$user->increment_login_count($username);
