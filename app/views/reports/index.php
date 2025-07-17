@@ -5,10 +5,10 @@
     <p class="lead">Welcome, <strong><?= htmlspecialchars($_SESSION['username']); ?></strong></p>
 
     <?php if (isset($topUser)): ?>
-    <div class="alert alert-success">
-        <strong>Top User:</strong> <?= htmlspecialchars($topUser['username']) ?> with <?= $topUser['total_reminders'] ?> reminders 
-    </div>
-    <?php endif; ?>
+        <div class="alert alert-success">
+            <strong>Summary</strong> 
+        </div>
+        <?php endif; ?>
 
     <div class="row g-4 mb-4">
         <div class="col-md-6">
@@ -40,6 +40,12 @@
             </div>
         </div>
     </div>
+
+    <?php if (isset($topUser)): ?>
+        <div class="alert alert-success">
+            <strong>Top User:</strong> <?= htmlspecialchars($topUser['username']) ?> with <?= $topUser['total_reminders'] ?> reminders 
+        </div>
+        <?php endif; ?>
 
     <div class="mb-4">
         <label for="userSelect" class="form-label fw-semibold">Select User:</label>
