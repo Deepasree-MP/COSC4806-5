@@ -16,6 +16,7 @@ class Reports extends Controller
 
         $loginStats = $userModel->get_login_attempt_summary();
         $userCounts = $remainderModel->get_reminder_counts_per_user();
+        usort($userCounts, fn($a, $b) => strcmp($a['username'], $b['username']));
         $allReminders = $remainderModel->get_all_remainders();
 
         $topUser = null;
@@ -34,6 +35,19 @@ class Reports extends Controller
                 ];
                 $maxReminders = (int)$row['total_reminders'];
             }
+        }
+
+        if (!$topUser && count($userCounts) > 0) {
+            $first = $userCounts[0];
+            $topUser = [
+                'username' => $first['username'],
+                'total_reminders' => 0,
+                'completed_count' => 0,
+                'pending_count' => 0,
+                'cancelled_count' => 0,
+                'success_count' => 0,
+                'failure_count' => 0
+            ];
         }
 
         foreach ($loginStats as $loginRow) {

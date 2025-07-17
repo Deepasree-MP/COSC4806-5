@@ -88,10 +88,10 @@ class Remainder {
             FROM users u
             LEFT JOIN remainders r ON u.id = r.user_id
             GROUP BY u.username
-            ORDER BY total_reminders DESC
         ");
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
 }
 ?>

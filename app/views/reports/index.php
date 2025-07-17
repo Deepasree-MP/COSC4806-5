@@ -10,7 +10,7 @@
     </div>
     <?php endif; ?>
 
-    <div class="row g-4">
+    <div class="row g-4 mb-4">
         <div class="col-md-6">
             <div class="card border-primary shadow-sm">
                 <div class="card-body">
@@ -41,11 +41,22 @@
         </div>
     </div>
 
-    <div class="row g-4 mt-4">
+    <div class="mb-4">
+        <label for="userSelect" class="form-label fw-semibold">Select User:</label>
+        <select id="userSelect" class="form-select w-auto d-inline-block">
+            <?php foreach ($userCounts as $row): ?>
+                <option value="<?= $row['username'] ?>" <?= $row['username'] === $topUser['username'] ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($row['username']) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+
+    <div class="row g-4 mb-5">
         <div class="col-md-6">
             <div class="card border-success shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title">Top User: <?= htmlspecialchars($topUser['username']) ?> Reminder Status</h5>
+                    <h5 class="card-title">Reminder Status for <span id="selectedUserReminderTitle"><?= htmlspecialchars($topUser['username']) ?></span></h5>
                     <canvas id="topUserReminderChart" height="250"></canvas>
                 </div>
             </div>
@@ -53,7 +64,7 @@
         <div class="col-md-6">
             <div class="card border-info shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title">Top User: <?= htmlspecialchars($topUser['username']) ?> Login Attempts</h5>
+                    <h5 class="card-title">Login Attempts for <span id="selectedUserLoginTitle"><?= htmlspecialchars($topUser['username']) ?></span></h5>
                     <canvas id="topUserLoginChart" height="250"></canvas>
                 </div>
             </div>
@@ -148,180 +159,160 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    let loginStats = <?= json_encode($loginStats) ?>;
-    let userCounts = <?= json_encode($userCounts) ?>;
-    let topUser = <?= json_encode($topUser) ?>;
-    let loginChartInstance;
-    let reminderChartInstance;
+    const userCounts = <?= json_encode($userCounts) ?>;
+    const loginStats = <?= json_encode($loginStats) ?>;
+    let selectedUser = document.getElementById('userSelect').value;
 
-    function renderLoginChart(type) {
-        const ctx = document.getElementById('loginChart').getContext('2d');
+    const loginBarCtx = document.getElementById('loginChart').getContext('2d');
+    const reminderBarCtx = document.getElementById('reminderChart').getContext('2d');
+    const reminderDonutCtx = document.getElementById('topUserReminderChart').getContext('2d');
+    const loginDonutCtx = document.getElementById('topUserLoginChart').getContext('2d');
+
+    let loginChartInstance, reminderChartInstance;
+    let reminderDonutChart, loginDonutChart;
+
+    function renderLoginBar(type) {
         if (loginChartInstance) loginChartInstance.destroy();
-        const data = {
-            labels: loginStats.map(row => row.username),
-            datasets: type === 'pie' ? [{
-                label: 'Total Attempts',
-                data: loginStats.map(row => parseInt(row.success_count) + parseInt(row.failure_count)),
-                backgroundColor: loginStats.map((_, i) => `hsl(${i * 30}, 70%, 60%)`)
-            }] : [
-                {
-                    label: 'Successful Logins',
-                    data: loginStats.map(row => parseInt(row.success_count)),
-                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Failed Logins',
-                    data: loginStats.map(row => parseInt(row.failure_count)),
-                    backgroundColor: 'rgba(255, 99, 132, 0.6)',
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    borderWidth: 1
-                }
-            ]
-        };
-        loginChartInstance = new Chart(ctx, {
+        loginChartInstance = new Chart(loginBarCtx, {
             type: type,
-            data: data,
+            data: {
+                labels: loginStats.map(row => row.username),
+                datasets: type === 'pie' ? [{
+                    label: 'Total Attempts',
+                    data: loginStats.map(row => parseInt(row.success_count) + parseInt(row.failure_count)),
+                    backgroundColor: loginStats.map((_, i) => `hsl(${i * 30}, 70%, 60%)`)
+                }] : [
+                    {
+                        label: 'Successful Logins',
+                        data: loginStats.map(row => parseInt(row.success_count)),
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Failed Logins',
+                        data: loginStats.map(row => parseInt(row.failure_count)),
+                        backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
             options: {
                 responsive: true,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Login Attempts'
-                    }
-                },
-                scales: type === 'bar' ? {
-                    y: {
-                        beginAtZero: true,
-                        precision: 0
-                    }
-                } : {}
+                plugins: { title: { display: true, text: 'Login Attempts' } },
+                scales: type === 'bar' ? { y: { beginAtZero: true } } : {}
             }
         });
     }
 
-    function renderReminderChart(type) {
-        const ctx = document.getElementById('reminderChart').getContext('2d');
+    function renderReminderBar(type) {
         if (reminderChartInstance) reminderChartInstance.destroy();
-        const data = {
-            labels: userCounts.map(row => row.username),
-            datasets: type === 'pie' ? [{
-                label: 'Total Reminders',
-                data: userCounts.map(row => parseInt(row.total_reminders)),
-                backgroundColor: userCounts.map((_, i) => `hsl(${i * 40}, 70%, 60%)`)
-            }] : [{
-                label: 'Total Reminders',
-                data: userCounts.map(row => parseInt(row.total_reminders)),
-                backgroundColor: 'rgba(255, 206, 86, 0.6)',
-                borderColor: 'rgba(255, 206, 86, 1)',
-                borderWidth: 1
-            }]
-        };
-        reminderChartInstance = new Chart(ctx, {
+        reminderChartInstance = new Chart(reminderBarCtx, {
             type: type,
-            data: data,
+            data: {
+                labels: userCounts.map(row => row.username),
+                datasets: type === 'pie' ? [{
+                    label: 'Total Reminders',
+                    data: userCounts.map(row => parseInt(row.total_reminders)),
+                    backgroundColor: userCounts.map((_, i) => `hsl(${i * 40}, 70%, 60%)`)
+                }] : [{
+                    label: 'Total Reminders',
+                    data: userCounts.map(row => parseInt(row.total_reminders)),
+                    backgroundColor: 'rgba(255, 206, 86, 0.6)',
+                    borderColor: 'rgba(255, 206, 86, 1)',
+                    borderWidth: 1
+                }]
+            },
             options: {
                 responsive: true,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Reminders per User'
-                    }
-                },
-                scales: type === 'bar' ? {
-                    y: {
-                        beginAtZero: true,
-                        precision: 0
-                    }
-                } : {}
+                plugins: { title: { display: true, text: 'Reminders per User' } },
+                scales: type === 'bar' ? { y: { beginAtZero: true } } : {}
             }
         });
     }
 
-    const ctxTopUserReminder = document.getElementById('topUserReminderChart').getContext('2d');
-    new Chart(ctxTopUserReminder, {
-        type: 'doughnut',
-        data: {
-            labels: ['Completed', 'Pending', 'Cancelled'],
-            datasets: [{
-                data: [
-                    parseInt(topUser.completed_count),
-                    parseInt(topUser.pending_count),
-                    parseInt(topUser.cancelled_count)
-                ],
-                backgroundColor: [
-                    'rgba(75, 192, 192, 0.6)',
-                    'rgba(255, 206, 86, 0.6)',
-                    'rgba(255, 99, 132, 0.6)'
-                ],
-                borderColor: [
-                    'rgba(75, 192, 192, 1)',
-                    'rgba(255, 206, 86, 1)',
-                    'rgba(255, 99, 132, 1)'
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                title: {
-                    display: true,
-                    text: `Reminder Status for ${topUser.username}`
-                },
-                legend: {
-                    position: 'bottom'
-                }
-            }
-        }
-    });
+    function renderUserDonutCharts(username) {
+        const user = userCounts.find(u => u.username === username) || {};
+        const login = loginStats.find(l => l.username === username) || { success_count: 0, failure_count: 0 };
 
-    const ctxTopUserLogin = document.getElementById('topUserLoginChart').getContext('2d');
-    new Chart(ctxTopUserLogin, {
-        type: 'doughnut',
-        data: {
-            labels: ['Successful Logins', 'Failed Logins'],
-            datasets: [{
-                data: [
-                    parseInt(topUser.success_count),
-                    parseInt(topUser.failure_count)
-                ],
-                backgroundColor: [
-                    'rgba(75, 192, 192, 0.6)',
-                    'rgba(255, 99, 132, 0.6)'
-                ],
-                borderColor: [
-                    'rgba(75, 192, 192, 1)',
-                    'rgba(255, 99, 132, 1)'
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                title: {
-                    display: true,
-                    text: `Login Attempts for ${topUser.username}`
-                },
-                legend: {
-                    position: 'bottom'
-                }
+        const completed = parseInt(user.completed_count) || 0;
+        const pending = parseInt(user.pending_count) || 0;
+        const cancelled = parseInt(user.cancelled_count) || 0;
+        const success = parseInt(login.success_count) || 0;
+        const failure = parseInt(login.failure_count) || 0;
+
+        document.getElementById('selectedUserReminderTitle').textContent = username;
+        document.getElementById('selectedUserLoginTitle').textContent = username;
+
+        if (reminderDonutChart) reminderDonutChart.destroy();
+        if (loginDonutChart) loginDonutChart.destroy();
+
+        reminderDonutChart = new Chart(reminderDonutCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Completed', 'Pending', 'Cancelled'],
+                datasets: [{
+                    data: [completed, pending, cancelled],
+                    backgroundColor: [
+                        'rgba(75, 192, 192, 0.6)',
+                        'rgba(255, 206, 86, 0.6)',
+                        'rgba(255, 99, 132, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(255, 99, 132, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'bottom' } }
             }
-        }
-    });
+        });
+
+        loginDonutChart = new Chart(loginDonutCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Successful Logins', 'Failed Logins'],
+                datasets: [{
+                    data: [success, failure],
+                    backgroundColor: [
+                        'rgba(75, 192, 192, 0.6)',
+                        'rgba(255, 99, 132, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(255, 99, 132, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }
+
+    renderLoginBar('bar');
+    renderReminderBar('bar');
+    renderUserDonutCharts(selectedUser);
 
     document.getElementById('loginChartType').addEventListener('change', function () {
-        renderLoginChart(this.value);
+        renderLoginBar(this.value);
     });
 
     document.getElementById('reminderChartType').addEventListener('change', function () {
-        renderReminderChart(this.value);
+        renderReminderBar(this.value);
     });
 
-    renderLoginChart('bar');
-    renderReminderChart('bar');
+    document.getElementById('userSelect').addEventListener('change', function () {
+        selectedUser = this.value;
+        renderUserDonutCharts(selectedUser);
+    });
 });
 </script>
 
