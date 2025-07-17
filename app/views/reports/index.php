@@ -67,6 +67,9 @@
                     <tr>
                         <th>Username</th>
                         <th>Total Reminders</th>
+                        <th>Completed</th>
+                        <th>Cancelled</th>
+                        <th>Pending</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -74,6 +77,9 @@
                     <tr>
                         <td><?= htmlspecialchars($row['username']) ?></td>
                         <td><?= $row['total_reminders'] ?></td>
+                        <td><?= $row['completed_count'] ?></td>
+                        <td><?= $row['cancelled_count'] ?></td>
+                        <td><?= $row['pending_count'] ?></td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>

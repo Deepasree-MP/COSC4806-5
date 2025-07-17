@@ -76,9 +76,15 @@ class Remainder {
         return $stmt->execute();
     }
 
-    public function get_reminder_counts_per_user() {
+    public function get_reminder_counts_per_user()
+    {
         $stmt = $this->db->prepare("
-            SELECT u.username, COUNT(r.id) AS total_reminders
+            SELECT 
+                u.username,
+                COUNT(r.id) AS total_reminders,
+                SUM(r.status = 0) AS completed_count,
+                SUM(r.status = 1) AS pending_count,
+                SUM(r.status = 2) AS cancelled_count
             FROM users u
             LEFT JOIN remainders r ON u.id = r.user_id
             GROUP BY u.username
@@ -87,6 +93,5 @@ class Remainder {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-
 }
 ?>
