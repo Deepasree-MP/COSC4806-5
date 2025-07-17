@@ -14,10 +14,15 @@ class Reports extends Controller
         $userModel = $this->model('User');
         $remainderModel = $this->model('Remainder');
 
+        
         $loginCounts = $userModel->get_login_counts();
         $userCounts = $remainderModel->get_reminder_counts_per_user();
         $allReminders = $remainderModel->get_all_remainders();
 
+        
+        $loginStats = $userModel->get_login_attempt_stats();
+
+        
         $topUser = null;
         $maxReminders = -1;
         foreach ($userCounts as $row) {
@@ -27,8 +32,10 @@ class Reports extends Controller
             }
         }
 
+        
         $this->view('reports/index', [
-            'loginCounts' => $loginCounts,
+            'loginCounts' => $loginCounts,     
+            'loginStats' => $loginStats,       
             'userCounts' => $userCounts,
             'allReminders' => $allReminders,
             'topUser' => $topUser

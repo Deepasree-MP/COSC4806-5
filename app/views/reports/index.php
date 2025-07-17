@@ -88,14 +88,18 @@
                 <thead class="table-dark">
                     <tr>
                         <th>Username</th>
-                        <th>Login Attempts</th>
+                        <th>Successful Logins</th>
+                        <th>Failed Logins</th>
+                        <th>Total Attempts</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($loginCounts as $row): ?>
+                    <?php foreach ($loginStats as $row): ?>
                     <tr>
                         <td><?= htmlspecialchars($row['username']) ?></td>
-                        <td><?= $row['login_count'] ?></td>
+                        <td><?= $row['success_count'] ?></td>
+                        <td><?= $row['failure_count'] ?></td>
+                        <td><?= $row['success_count'] + $row['failure_count'] ?></td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -106,21 +110,46 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    const loginStats = <?= json_encode($loginStats) ?>;
+    const usernames = loginStats.map(row => row.username);
+    const successCounts = loginStats.map(row => parseInt(row.success_count));
+    const failureCounts = loginStats.map(row => parseInt(row.failure_count));
+
     const loginChart = new Chart(document.getElementById('loginChart'), {
         type: 'bar',
         data: {
-            labels: <?= json_encode(array_column($loginCounts, 'username')) ?>,
-            datasets: [{
-                label: 'Login Attempts',
-                data: <?= json_encode(array_column($loginCounts, 'login_count')) ?>,
-                backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1
-            }]
+            labels: usernames,
+            datasets: [
+                {
+                    label: 'Successful Logins',
+                    data: successCounts,
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Failed Logins',
+                    data: failureCounts,
+                    backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }
+            ]
         },
         options: {
             responsive: true,
-            scales: { y: { beginAtZero: true, precision: 0 } }
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Login Attempts: Success vs Failure'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    precision: 0
+                }
+            }
         }
     });
 
@@ -138,7 +167,12 @@
         },
         options: {
             responsive: true,
-            scales: { y: { beginAtZero: true, precision: 0 } }
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    precision: 0
+                }
+            }
         }
     });
 </script>

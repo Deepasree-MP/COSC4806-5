@@ -81,4 +81,34 @@ class User
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function record_successful_login($user_id, $username)
+    {
+        $stmt = $this->db->prepare("INSERT INTO login_events (user_id, username, status) VALUES (:user_id, :username, 'success')");
+        $stmt->bindParam(":user_id", $user_id);
+        $stmt->bindParam(":username", $username);
+        $stmt->execute();
+    }
+
+    public function record_failed_login($username)
+    {
+        $stmt = $this->db->prepare("INSERT INTO login_events (user_id, username, status) VALUES (NULL, :username, 'failure')");
+        $stmt->bindParam(":username", $username);
+        $stmt->execute();
+    }
+
+    public function get_login_attempt_stats()
+    {
+        $stmt = $this->db->prepare("
+            SELECT 
+                username,
+                SUM(status = 'success') AS success_count,
+                SUM(status = 'failure') AS failure_count
+            FROM login_events
+            GROUP BY username
+        ");
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
 }

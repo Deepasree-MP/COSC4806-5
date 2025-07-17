@@ -15,42 +15,40 @@ class Login extends Controller {
 				$user->authenticate($username, $password); 
 		}*/
 
-		public function verify() {
-				session_start();
+	public function verify() {
+		session_start();
 
-				$username = $_POST['username'];
-				$password = $_POST['password'];
+		$username = $_POST['username'];
+		$password = $_POST['password'];
 
-				//echo $username . "-" . $password;
-				//die;
+		$user = $this->model('User');
+		$authUser = $user->authenticate($username, $password);
 
-				$user = $this->model('User');
-				$authUser = $user->authenticate($username, $password);
+		if ($authUser) {
+			$_SESSION['auth'] = 1;
+			$_SESSION['username'] = ucwords($username);
+			$_SESSION['role'] = $authUser['role'] ?? 'user';
+			$_SESSION['just_logged_in'] = true;
 
-				if ($authUser) {
-						$_SESSION['auth'] = 1;
-						$_SESSION['username'] = ucwords($username);
-						$_SESSION['role'] = $authUser['role'] ?? 'user';
-						$_SESSION['just_logged_in'] = true;
+			$user->increment_login_count($username);
+			$user->record_successful_login($authUser['id'], $username);
 
-						$user->increment_login_count($username);
+			unset($_SESSION['failedAuth']);
+			header('Location: /home');
+			die;
+		} else {
+			if (!isset($_SESSION['failedAuth'])) {
+				$_SESSION['failedAuth'] = 1;
+			} else {
+				$_SESSION['failedAuth']++;
+			}
 
-						//echo $username . "-" . $password;
-						//die;
-						unset($_SESSION['failedAuth']);
-						header('Location: /home');
-						die;
-				} else {
-						if (!isset($_SESSION['failedAuth'])) {
-								$_SESSION['failedAuth'] = 1;
-						} else {
-								$_SESSION['failedAuth']++;
-						}
+		
+			$user->record_failed_login($username);
 
-						// Store the message temporarily in session
-						$_SESSION['error_message'] = "This is unsuccessful attempt number " . $_SESSION['failedAuth'];
-						header('Location: /login');
-						die;
-				}
+			$_SESSION['error_message'] = "This is unsuccessful attempt number " . $_SESSION['failedAuth'];
+			header('Location: /login');
+			die;
 		}
+	}
 }
