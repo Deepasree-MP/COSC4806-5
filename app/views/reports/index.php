@@ -6,7 +6,7 @@
 
     <?php if (isset($topUser)): ?>
     <div class="alert alert-success">
-        <strong>Top User:</strong> <?= htmlspecialchars($topUser['username']) ?> with <?= $topUser['total_reminders'] ?> reminders 
+        <strong>Top User:</strong> <?= htmlspecialchars($topUser['username']) ?> with <?= $topUser['total_reminders'] ?> reminders
     </div>
     <?php endif; ?>
 
@@ -14,7 +14,13 @@
         <div class="col-md-6">
             <div class="card border-primary shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title">Login Attempts Chart</h5>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="card-title m-0">Login Attempts Chart</h5>
+                        <select id="loginChartType" class="form-select form-select-sm w-auto">
+                            <option value="bar">Bar</option>
+                            <option value="pie">Pie</option>
+                        </select>
+                    </div>
                     <canvas id="loginChart" height="250"></canvas>
                 </div>
             </div>
@@ -22,7 +28,13 @@
         <div class="col-md-6">
             <div class="card border-warning shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title">Reminders per User Chart</h5>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="card-title m-0">Reminders per User Chart</h5>
+                        <select id="reminderChartType" class="form-select form-select-sm w-auto">
+                            <option value="bar">Bar</option>
+                            <option value="pie">Pie</option>
+                        </select>
+                    </div>
                     <canvas id="reminderChart" height="250"></canvas>
                 </div>
             </div>
@@ -116,71 +128,112 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    const loginStats = <?= json_encode($loginStats) ?>;
-    const usernames = loginStats.map(row => row.username);
-    const successCounts = loginStats.map(row => parseInt(row.success_count));
-    const failureCounts = loginStats.map(row => parseInt(row.failure_count));
+    document.addEventListener('DOMContentLoaded', function () {
+        let loginStats = <?= json_encode($loginStats) ?>;
+        let userCounts = <?= json_encode($userCounts) ?>;
 
-    const loginChart = new Chart(document.getElementById('loginChart'), {
-        type: 'bar',
-        data: {
-            labels: usernames,
-            datasets: [
-                {
-                    label: 'Successful Logins',
-                    data: successCounts,
-                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Failed Logins',
-                    data: failureCounts,
-                    backgroundColor: 'rgba(255, 99, 132, 0.6)',
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    borderWidth: 1
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                title: {
-                    display: true,
-                    text: 'Login Attempts: Success vs Failure'
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    precision: 0
-                }
-            }
-        }
-    });
+        let loginChartInstance;
+        let reminderChartInstance;
 
-    const reminderChart = new Chart(document.getElementById('reminderChart'), {
-        type: 'bar',
-        data: {
-            labels: <?= json_encode(array_column($userCounts, 'username')) ?>,
-            datasets: [{
-                label: 'Total Reminders',
-                data: <?= json_encode(array_column($userCounts, 'total_reminders')) ?>,
-                backgroundColor: 'rgba(255, 206, 86, 0.6)',
-                borderColor: 'rgba(255, 206, 86, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    precision: 0
+        function renderLoginChart(type) {
+            const ctx = document.getElementById('loginChart').getContext('2d');
+            if (loginChartInstance) loginChartInstance.destroy();
+
+            const data = {
+                labels: loginStats.map(row => row.username),
+                datasets: type === 'pie' ? [{
+                    label: 'Total Attempts',
+                    data: loginStats.map(row => parseInt(row.success_count) + parseInt(row.failure_count)),
+                    backgroundColor: loginStats.map((_, i) => `hsl(${i * 30}, 70%, 60%)`)
+                }] : [
+                    {
+                        label: 'Successful Logins',
+                        data: loginStats.map(row => parseInt(row.success_count)),
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Failed Logins',
+                        data: loginStats.map(row => parseInt(row.failure_count)),
+                        backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            };
+
+            loginChartInstance = new Chart(ctx, {
+                type: type,
+                data: data,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Login Attempts'
+                        }
+                    },
+                    scales: type === 'bar' ? {
+                        y: {
+                            beginAtZero: true,
+                            precision: 0
+                        }
+                    } : {}
                 }
-            }
+            });
         }
-    });
-</script>
+
+        function renderReminderChart(type) {
+            const ctx = document.getElementById('reminderChart').getContext('2d');
+            if (reminderChartInstance) reminderChartInstance.destroy();
+
+            const data = {
+                labels: userCounts.map(row => row.username),
+                datasets: type === 'pie' ? [{
+                    label: 'Total Reminders',
+                    data: userCounts.map(row => parseInt(row.total_reminders)),
+                    backgroundColor: userCounts.map((_, i) => `hsl(${i * 40}, 70%, 60%)`)
+                }] : [{
+                    label: 'Total Reminders',
+                    data: userCounts.map(row => parseInt(row.total_reminders)),
+                    backgroundColor: 'rgba(255, 206, 86, 0.6)',
+                    borderColor: 'rgba(255, 206, 86, 1)',
+                    borderWidth: 1
+                }]
+            };
+
+            reminderChartInstance = new Chart(ctx, {
+                type: type,
+                data: data,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Reminders per User'
+                        }
+                    },
+                    scales: type === 'bar' ? {
+                        y: {
+                            beginAtZero: true,
+                            precision: 0
+                        }
+                    } : {}
+                }
+            });
+        }
+
+        document.getElementById('loginChartType').addEventListener('change', function () {
+            renderLoginChart(this.value);
+        });
+
+        document.getElementById('reminderChartType').addEventListener('change', function () {
+            renderReminderChart(this.value);
+        });
+
+        renderLoginChart('bar');
+        renderReminderChart('bar');
+    });</script>
 
 <?php require_once 'app/views/templates/footer.php'; ?>
