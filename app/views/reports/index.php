@@ -45,8 +45,16 @@
         <div class="col-md-6">
             <div class="card border-success shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title">Top User: <?= htmlspecialchars($topUser['username']) ?> (Reminder Status)</h5>
-                    <canvas id="topUserChart" height="250"></canvas>
+                    <h5 class="card-title">Top User: <?= htmlspecialchars($topUser['username']) ?> Reminder Status</h5>
+                    <canvas id="topUserReminderChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-info shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Top User: <?= htmlspecialchars($topUser['username']) ?> Login Attempts</h5>
+                    <canvas id="topUserLoginChart" height="250"></canvas>
                 </div>
             </div>
         </div>
@@ -143,7 +151,6 @@ document.addEventListener('DOMContentLoaded', function () {
     let loginStats = <?= json_encode($loginStats) ?>;
     let userCounts = <?= json_encode($userCounts) ?>;
     let topUser = <?= json_encode($topUser) ?>;
-
     let loginChartInstance;
     let reminderChartInstance;
 
@@ -232,8 +239,8 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    const ctxTopUser = document.getElementById('topUserChart').getContext('2d');
-    new Chart(ctxTopUser, {
+    const ctxTopUserReminder = document.getElementById('topUserReminderChart').getContext('2d');
+    new Chart(ctxTopUserReminder, {
         type: 'doughnut',
         data: {
             labels: ['Completed', 'Pending', 'Cancelled'],
@@ -262,6 +269,41 @@ document.addEventListener('DOMContentLoaded', function () {
                 title: {
                     display: true,
                     text: `Reminder Status for ${topUser.username}`
+                },
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    const ctxTopUserLogin = document.getElementById('topUserLoginChart').getContext('2d');
+    new Chart(ctxTopUserLogin, {
+        type: 'doughnut',
+        data: {
+            labels: ['Successful Logins', 'Failed Logins'],
+            datasets: [{
+                data: [
+                    parseInt(topUser.success_count),
+                    parseInt(topUser.failure_count)
+                ],
+                backgroundColor: [
+                    'rgba(75, 192, 192, 0.6)',
+                    'rgba(255, 99, 132, 0.6)'
+                ],
+                borderColor: [
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(255, 99, 132, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: `Login Attempts for ${topUser.username}`
                 },
                 legend: {
                     position: 'bottom'

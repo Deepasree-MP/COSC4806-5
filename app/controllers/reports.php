@@ -14,28 +14,38 @@ class Reports extends Controller
         $userModel = $this->model('User');
         $remainderModel = $this->model('Remainder');
 
-        
-        $loginCounts = $userModel->get_login_counts();
+        $loginStats = $userModel->get_login_attempt_summary();
         $userCounts = $remainderModel->get_reminder_counts_per_user();
         $allReminders = $remainderModel->get_all_remainders();
 
-        
-        $loginStats = $userModel->get_login_attempt_stats();
-
-        
         $topUser = null;
         $maxReminders = -1;
+
         foreach ($userCounts as $row) {
             if ((int)$row['total_reminders'] > $maxReminders) {
-                $topUser = $row;
+                $topUser = [
+                    'username' => $row['username'],
+                    'total_reminders' => $row['total_reminders'],
+                    'completed_count' => $row['completed_count'],
+                    'pending_count' => $row['pending_count'],
+                    'cancelled_count' => $row['cancelled_count'],
+                    'success_count' => 0,
+                    'failure_count' => 0
+                ];
                 $maxReminders = (int)$row['total_reminders'];
             }
         }
 
-        
+        foreach ($loginStats as $loginRow) {
+            if ($loginRow['username'] === $topUser['username']) {
+                $topUser['success_count'] = $loginRow['success_count'];
+                $topUser['failure_count'] = $loginRow['failure_count'];
+                break;
+            }
+        }
+
         $this->view('reports/index', [
-            'loginCounts' => $loginCounts,     
-            'loginStats' => $loginStats,       
+            'loginStats' => $loginStats,
             'userCounts' => $userCounts,
             'allReminders' => $allReminders,
             'topUser' => $topUser

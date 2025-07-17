@@ -111,4 +111,18 @@ class User
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function get_login_attempt_summary()
+    {
+        $stmt = $this->db->prepare("
+            SELECT username,
+                   SUM(CASE WHEN status = 'success' THEN 1 ELSE 0 END) AS success_count,
+                   SUM(CASE WHEN status = 'failure' THEN 1 ELSE 0 END) AS failure_count
+            FROM login_events
+            GROUP BY username
+        ");
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+
 }
